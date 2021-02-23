@@ -1,30 +1,43 @@
 ﻿using AIChara;
-using System;
+using System.Linq;
+using UnityEngine;
 
 namespace HS2_PovX
 {
-	public static class Tools
+    public static class Tools
 	{
-		// Return the offset of the eyes in the neck's object space.
-		/*public static Vector3 GetEyesOffset(ChaControl chaCtrl)
+		public static bool ShouldHideHead()
 		{
-			Transform neck = chaCtrl.neckLookCtrl.neckLookScript.aBones[0].neckBone;
-			EyeObject[] eyes = chaCtrl.eyeLookCtrl.eyeLookScript.eyeObjs;
-
-			return Vector3.Lerp(
-				GetEyesOffset_Internal(neck, eyes[0].eyeTransform),
-				GetEyesOffset_Internal(neck, eyes[1].eyeTransform),
-				0.5f
-			);
+			return Controller.povEnabled && HS2_PovX.HideHead.Value;
 		}
 
-		public static Vector3 GetEyesOffset_Internal(Transform neck, Transform eye)
+		// Return the offset of the eyes in the head's object space.
+		public static Vector3 GetEyesOffset(ChaControl chaCtrl)
+		{
+			Transform head = chaCtrl.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(Controller.headBone)).FirstOrDefault();
+
+			Transform[] eyes = new Transform[2];
+			eyes[0] = chaCtrl.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(Controller.leftEyePupil)).FirstOrDefault();
+			eyes[1] = chaCtrl.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(Controller.rightEyePupil)).FirstOrDefault();
+
+			if (HS2_PovX.CameraPoVLocation.Value == HS2_PovX.CameraLocation.LeftEye)
+				return GetEyesOffsetInternal(head, eyes[0]);
+			else if (HS2_PovX.CameraPoVLocation.Value == HS2_PovX.CameraLocation.RightEye)
+				return GetEyesOffsetInternal(head, eyes[1]);
+
+			return Vector3.Lerp(
+				GetEyesOffsetInternal(head, eyes[0]),
+				GetEyesOffsetInternal(head, eyes[1]),
+				0.5f);
+		}
+		
+		private static Vector3 GetEyesOffsetInternal(Transform head, Transform eye)
 		{
 			Vector3 offset = Vector3.zero;
 
-			for (int i = 0; i < 50; i++)
+			for (int bone = 0; bone < 50; bone++)
 			{
-				if (eye == null || eye == neck)
+				if (eye == null || eye == head)
 					break;
 
 				offset += eye.localPosition;
@@ -32,15 +45,6 @@ namespace HS2_PovX
 			}
 
 			return offset;
-		}*/
-
-		// Modulo without negative.
-		public static float Mod2(float value, float mod)
-		{
-			if (value < 0)
-				value = mod + (value % mod);
-
-			return value % mod;
 		}
 	}
 }
