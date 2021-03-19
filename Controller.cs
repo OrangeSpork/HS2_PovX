@@ -22,8 +22,9 @@ namespace HS2_PovX
 		public static float eyeLocalYaw = 0f;
 
 		// 0 = Player; 1 = 1st Partner; 2 = 2nd Partner; 3 = ...
-		public static Focus positionFocus = Focus.FirstPlayer;
-		public static Focus targetFocus = Focus.FirstPlayer;
+		public static int povFocus = 0;
+		public static int targetFocus = 0;
+		public static ChaControl[] characters = new ChaControl[0];
 		public static ChaControl povCharacter;
 		public static ChaControl targetCharacter;
 		public static Vector3 eyeOffset = Vector3.zero;
@@ -66,14 +67,6 @@ namespace HS2_PovX
 		internal static Transform povHead;
 		internal static Transform lockTarget;
 
-		public enum Focus
-		{
-			FirstPlayer,
-			SecondPlayer,
-			FirstAgent,
-			SecondAgent
-		}
-
 		public static void Update()
 		{
 			povSetThisFrame = false;
@@ -86,9 +79,9 @@ namespace HS2_PovX
 
 			if (HS2_PovX.CharaCycleKey.Value.IsDown())
 			{
-				targetFocus = positionFocus = GetNextValidFocus(positionFocus);
-				SetPoVCharacter(GetCharacterFromFocus(positionFocus));
-				SetTargetCharacter(GetCharacterFromFocus(targetFocus));
+				targetFocus = povFocus = GetValidFocus(povFocus + 1);
+				SetPoVCharacter(GetValidCharacterFromFocus(ref povFocus));
+				SetTargetCharacter(GetValidCharacterFromFocus(ref targetFocus));
 			}
 
 			if (HS2_PovX.HeadLockKey.Value.IsDown())
@@ -96,8 +89,8 @@ namespace HS2_PovX
 
 			if (HS2_PovX.LockOnKey.Value.IsDown())
 			{
-				targetFocus = GetNextValidFocus(targetFocus);
-				SetTargetCharacter(GetCharacterFromFocus(targetFocus));
+				targetFocus = GetValidFocus(targetFocus + 1);
+				SetTargetCharacter(GetValidCharacterFromFocus(ref targetFocus));
 			}
 
 			if (HS2_PovX.CursorToggleKey.Value.IsDown())
@@ -111,7 +104,7 @@ namespace HS2_PovX
 				Cursor.lockState = CursorLockMode.None;
 			}
 
-			if (positionFocus == targetFocus)
+			if (povFocus == targetFocus)
 				UpdateMouseLook();
 		}
 
@@ -139,14 +132,16 @@ namespace HS2_PovX
 			povEnabled = enable;
 			if (enable)
 			{
-				if (!FocusCharacterValid(positionFocus))
-					targetFocus = positionFocus = GetNextValidFocus(positionFocus);
+				characters = GetSceneCharacters();
+
+				if (!FocusCharacterValid(povFocus))
+					targetFocus = povFocus = GetValidFocus(povFocus + 1);
 
 				if (!FocusCharacterValid(targetFocus))
-					targetFocus = GetNextValidFocus(targetFocus);
+					targetFocus = GetValidFocus(targetFocus + 1);
 
-				SetPoVCharacter(GetCharacterFromFocus(positionFocus));
-				SetTargetCharacter(GetCharacterFromFocus(targetFocus));
+				SetPoVCharacter(GetValidCharacterFromFocus(ref povFocus));
+				SetTargetCharacter(GetValidCharacterFromFocus(ref targetFocus));
 				ResetPoVRotations();
 				backupFoV = Camera.main.fieldOfView;
 			}
@@ -162,6 +157,11 @@ namespace HS2_PovX
 				SetPoVCharacter(null);
 				SetTargetCharacter(null);
 			}
+		}
+
+		public static ChaControl[] GetSceneCharacters()
+		{
+			return UnityEngine.Object.FindObjectsOfType<ChaControl>();
 		}
 
 		public static void SetPoVCharacter(ChaControl character)
@@ -206,56 +206,42 @@ namespace HS2_PovX
 			lockTarget = targetCharacter.GetComponentsInChildren<Transform>().Where(x => x.name.Equals(lockBone)).FirstOrDefault();
 		}
 
-		public static ChaControl GetCharacterFromFocus(Focus focus)
+		public static int GetValidFocus(int focus)
 		{
-			if (hScene == null)
-				return null;
+			if (focus >= characters.Length)
+				focus %= characters.Length;
 
-			switch (focus)
+			for (int i = 0; i < characters.Length; i++)
 			{
-				case Focus.FirstPlayer: return hScene.GetMales()?[0];
-				case Focus.SecondPlayer: return hScene.GetMales()?[1];
-				case Focus.FirstAgent: return hScene.GetFemales()?[0];
-				case Focus.SecondAgent: return hScene.GetFemales()?[1];
-				default: return null;
-			}
-		}
-
-		public static Focus GetNextFocus(Focus focus)
-		{
-			switch (focus)
-			{
-				case Focus.FirstPlayer: return Focus.SecondPlayer;
-				case Focus.SecondPlayer: return Focus.FirstAgent;
-				case Focus.FirstAgent: return Focus.SecondAgent;
-				case Focus.SecondAgent: return Focus.FirstPlayer;
-				default: return Focus.FirstPlayer;
-			}
-		}
-
-		public static Focus GetNextValidFocus(Focus focus)
-		{
-			int focusCheck = 0;
-
-			while (focusCheck < 4)
-			{
-				focus = GetNextFocus(focus);
 				if (FocusCharacterValid(focus))
 					return focus;
 
-				focusCheck++;
+				// Skip invisible or destroyed characters.
+				focus = (focus + 1) % characters.Length;
 			}
 
-			return Focus.FirstAgent;
+			return focus;
 		}
 
-		public static bool FocusCharacterValid(Focus focus)
+		public static bool FocusCharacterValid(int focus)
 		{
-			var focusCharacter = GetCharacterFromFocus(focus);
+			if (focus >= characters.Length)
+				return false;
+
+			var focusCharacter = characters[focus];
 			if (focusCharacter != null && focusCharacter.visibleAll)
 				return true;
 
 			return false;
+		}
+
+		public static ChaControl GetValidCharacterFromFocus(ref int focus)
+		{
+			if (characters.Length == 0)
+				return null;
+
+			focus = GetValidFocus(focus);
+			return characters[focus];
 		}
 
 		public static void UpdateTargetLockedCamera(Transform head)
@@ -300,7 +286,7 @@ namespace HS2_PovX
 
 		public static void UpdatePoVHScene()
 		{
-			if (positionFocus != targetFocus)
+			if (povFocus != targetFocus)
 			{
 				UpdateTargetLockedCamera(povHead);
 				return;
@@ -314,7 +300,7 @@ namespace HS2_PovX
 
 		public static void CheckHSceneHeadLock(string hMotion = null)
 		{
-			if (hScene == null)
+			if (hScene == null || povFocus >= LockHeadHPositions.Count)
 				return;
 
 			string currentHAnimation = hScene.ctrlFlag.nowAnimationInfo.fileFemale;
@@ -325,8 +311,8 @@ namespace HS2_PovX
 			if (currentHAnimation == null || currentHMotion == null)
 				return;
 
-			if (LockHeadAllHPositions[(int)positionFocus].Contains(currentHAnimation) ||
-				(LockHeadHPositions[(int)positionFocus].Contains(currentHAnimation) && !lockHeadHMotionExceptions.Contains(currentHMotion)))
+			if (LockHeadAllHPositions[povFocus].Contains(currentHAnimation) ||
+				(LockHeadHPositions[povFocus].Contains(currentHAnimation) && !lockHeadHMotionExceptions.Contains(currentHMotion)))
 				LockPoVHead(true);
 			else
 				LockPoVHead(false);

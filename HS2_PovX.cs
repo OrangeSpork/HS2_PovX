@@ -12,7 +12,7 @@ namespace HS2_PovX
 	{
 		const string GUID = "com.2155x.fairbair.hs2_povx";
 		const string Name = "HS2 PoV X";
-		const string Version = "1.2.1";
+		const string Version = "1.2.2";
 
 		const string SECTION_GENERAL = "General";
 		const string SECTION_CAMERA = "Camera";
