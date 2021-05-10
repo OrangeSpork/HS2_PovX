@@ -54,7 +54,7 @@ namespace HS2_PovX
 			Controller.CheckHSceneHeadLock(stateName);
 		}
 
-		[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "syncPlay", typeof(string), typeof (int), typeof (float))]
+		[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "syncPlay", typeof(string), typeof(int), typeof(float))]
 		public static void ChaControl_Post_SyncPlay(string _strameHash)
 		{
 			if (_strameHash.IsNullOrEmpty())

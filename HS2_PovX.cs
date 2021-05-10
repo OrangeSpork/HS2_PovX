@@ -12,7 +12,7 @@ namespace HS2_PovX
 	{
 		const string GUID = "com.2155x.fairbair.hs2_povx";
 		const string Name = "HS2 PoV X";
-		const string Version = "1.2.2";
+		const string Version = "1.3.0";
 
 		const string SECTION_GENERAL = "General";
 		const string SECTION_CAMERA = "Camera";
@@ -61,10 +61,13 @@ namespace HS2_PovX
 			"Amount to scale Z when hiding head.";
 		const string DESCRIPTION_CAMERA_LOCK_HEAD_KEY =
 			"During PoV mode in HScenes, pressing this key will lock/unlock the characters head to the default animation position.";
+		const string DESCRIPTION_AUTOMATICALLY_LOCK_HEAD =
+			"During PoV mode in HScenes, automatically lock/unlock the characters head to the default animation position depending on position.";
 
 		internal static ConfigEntry<bool> HideHead { get; set; }
 		internal static ConfigEntry<float> HideHeadScaleZ { get; set; }
 		internal static ConfigEntry<bool> HSceneLockCursor { get; set; }
+		internal static ConfigEntry<bool> HSceneAutoHeadLock { get; set; }
 
 		internal static ConfigEntry<float> Sensitivity { get; set; }
 		internal static ConfigEntry<float> NearClip { get; set; }
@@ -99,6 +102,7 @@ namespace HS2_PovX
 			HideHead = Config.Bind(SECTION_GENERAL, "Hide Head", false, DESCRIPTION_HIDE_HEAD);
 			HideHeadScaleZ = Config.Bind(SECTION_GENERAL, "Hide Head Scale Z", 0.5f, new ConfigDescription(DESCRIPTION_HIDE_HEAD_SCALE_Z, new AcceptableValueRange<float>(0f, 1f)));
 			HSceneLockCursor = Config.Bind(SECTION_GENERAL, "Lock Cursor During H Scenes", false, DESCRIPTION_H_SCENE_LOCK_CURSOR);
+			HSceneAutoHeadLock = Config.Bind(SECTION_GENERAL, "Automatically Lock Head During H Scenes", false, DESCRIPTION_AUTOMATICALLY_LOCK_HEAD);
 
 			Sensitivity = Config.Bind(SECTION_CAMERA, "Camera Sensitivity", 2f);
 			NearClip = Config.Bind(SECTION_CAMERA, "Camera Near Clip Plane", 0.1f, new ConfigDescription("", new AcceptableValueRange<float>(0.1f, 2f)));
@@ -139,7 +143,7 @@ namespace HS2_PovX
 			HarmonyLib.Harmony.CreateAndPatchAll(typeof(HS2_PovX));
 		}
 
-		public void Update()
+		internal void Update()
 		{
 			Controller.Update();
 		}

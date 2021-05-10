@@ -300,7 +300,7 @@ namespace HS2_PovX
 
 		public static void CheckHSceneHeadLock(string hMotion = null)
 		{
-			if (hScene == null || povFocus >= LockHeadHPositions.Count)
+			if (!HS2_PovX.HSceneAutoHeadLock.Value ||hScene == null || povFocus >= LockHeadHPositions.Count)
 				return;
 
 			string currentHAnimation = hScene.ctrlFlag.nowAnimationInfo.fileFemale;
