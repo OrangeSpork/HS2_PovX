@@ -1,5 +1,6 @@
 ﻿using AIChara;
 using HarmonyLib;
+using Studio;
 
 namespace HS2_PovX
 {
@@ -16,6 +17,16 @@ namespace HS2_PovX
 
 			Controller.UpdatePoVCamera();
 			return false;
+		}
+
+		[HarmonyPostfix, HarmonyPatch(typeof(FKCtrl), "LateUpdate")]
+		public static void FKCtrl_LateUpdate()
+        {
+			if (!Controller.povEnabled ||
+				Controller.povCharacter == null)
+				return;
+
+			Controller.UpdatePoVCamera();
 		}
 
 		[HarmonyPostfix, HarmonyPatch(typeof(HScene), "SetStartVoice")]
